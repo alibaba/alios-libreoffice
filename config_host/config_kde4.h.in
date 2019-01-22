@@ -1,0 +1,10 @@
+/*
+Settings for KDE4 integration.
+*/
+
+#ifndef CONFIG_KDE4_H
+#define CONFIG_KDE4_H
+
+#define KDE4_HAVE_GLIB 0
+
+#endif

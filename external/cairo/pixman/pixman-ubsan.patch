@@ -1,0 +1,33 @@
+--- misc/pixman/pixman/pixman.h
++++ misc/build/pixman/pixman/pixman.h
+@@ -127,7 +127,7 @@
+ #define pixman_fixed_1_minus_e		(pixman_fixed_1 - pixman_fixed_e)
+ #define pixman_fixed_minus_1		(pixman_int_to_fixed(-1))
+ #define pixman_fixed_to_int(f)		((int) ((f) >> 16))
+-#define pixman_int_to_fixed(i)		((pixman_fixed_t) ((i) << 16))
++#define pixman_int_to_fixed(i)		((pixman_fixed_t) ((i) * (1 << 16)))
+ #define pixman_fixed_to_double(f)	(double) ((f) / (double) pixman_fixed_1)
+ #define pixman_double_to_fixed(d)	((pixman_fixed_t) ((d) * 65536.0))
+ #define pixman_fixed_frac(f)		((f) & pixman_fixed_1_minus_e)
+--- misc/pixman/pixman/pixman-fast-path.c
++++ misc/build/pixman/pixman/pixman-fast-path.c
+@@ -2836,7 +2836,7 @@
+ 	sgtot = CLIP (sgtot, 0, 0xff);
+ 	sbtot = CLIP (sbtot, 0, 0xff);
+ 
+-	buffer[k] = (satot << 24) | (srtot << 16) | (sgtot << 8) | (sbtot << 0);
++	buffer[k] = ((uint32_t)satot << 24) | (srtot << 16) | (sgtot << 8) | (sbtot << 0);
+ 
+     next:
+ 	vx += ux;
+--- misc/pixman/pixman/pixman-bits-image.c
++++ misc/build/pixman/pixman/pixman-bits-image.c
+@@ -306,7 +306,7 @@
+     sgtot = CLIP (sgtot, 0, 0xff);
+     sbtot = CLIP (sbtot, 0, 0xff);
+ 
+-    return ((satot << 24) | (srtot << 16) | (sgtot <<  8) | (sbtot));
++    return (((uint32_t)satot << 24) | (srtot << 16) | (sgtot <<  8) | (sbtot));
+ }
+ 
+ static force_inline uint32_t

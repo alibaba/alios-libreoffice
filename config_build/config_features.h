@@ -1,0 +1,188 @@
+/* config_host/config_features.h.  Generated from config_features.h.in by configure.  */
+/* Configuration of high-level features that either 1) depend on the
+ * platform (but are common to several platforms so just checking for
+ * the feature is simpler than checking for several platforms), or 2)
+ * are build-time configurable.
+ */
+
+#ifndef CONFIG_FEATURES_H
+#define CONFIG_FEATURES_H
+
+/* JAVA
+ *
+ * Whether we have support for Java extensions, and use own Java
+ * functionality).
+ */
+
+#define HAVE_FEATURE_JAVA 0
+
+/* DESKTOP - Whether we have a "normal" desktop UI or not.
+ *
+ * Non-DESKTOP in practice means touch-based mobile devices, Android
+ * or iOS for now. Support for those is work in progress.
+ *
+ * Non-DESKTOP implies that the OS makes sure that only one instance
+ * of each LibreOffice-based "app" at a time can be running, and thus
+ * the LibreOffice code does not need to handle such things itself.
+ *
+ * Non-DESKTOP implies no traditional inter-app drag and drop concept.
+ *
+ * Non-DESKTOP implies no traditional help mechanism, and to some
+ * extent (as noticed, and as possible without making the code too
+ * ugly) the related code is ifdeffed out.
+ *
+ * Non-DESKTOP implies no traditional desktop-style GUI elements like
+ * toolbars and scrollbars presented by the LO code.
+ */
+
+#define HAVE_FEATURE_DESKTOP 1
+
+/* X11
+ *
+ * Whether we are building code to run in an X11 environment.
+ */
+
+#define HAVE_FEATURE_X11 1
+
+/* AVMEDIA - Whether to have functionality to display and manipulate
+ * embedded AV media in documents
+ */
+
+#define HAVE_FEATURE_AVMEDIA 1
+
+/* DBCONNECTIVITY - Whether to have functionality to connect to
+ * databases.
+ */
+
+#define HAVE_FEATURE_DBCONNECTIVITY 1
+
+/* EXTENSIONS - Whether we have any extension mechanism at all
+ *
+ * Primarily intended for non-desktop platforms where supporting
+ * extensions can be complicated, or even prohibited by the OS (as on
+ * iOS).
+ */
+
+#define HAVE_FEATURE_EXTENSIONS 1
+
+/* SCRIPTING - Whether we have any mechanism to execute user-provided scripts
+ *
+ * Primarily intended for the iOS App Store where the
+ * rules prohibit user-accessible scripting features.
+ * Sure, it would be nice to still be able to have internal features
+ * implemented in some scripting language. Later, if necessary.
+ */
+
+#define HAVE_FEATURE_SCRIPTING 1
+
+/* MULTIUSER_ENVIRONMENT - Whether running on a "normal" multi-user
+ * desktop (or server) OS
+ *
+ * Non-MULTIUSER implies that the OS makes sure that only one
+ * LibreOffice-based process at a time can be running that could
+ * access the same local documents, and that thus no locking of local
+ * documents is needed, and that no "shared documents" in Calc
+ * is meaningful.
+ *
+ * Non-MULTIUSER in practice means Android or iOS for now, so thus is
+ * work in progress.
+ */
+
+#define HAVE_FEATURE_MULTIUSER_ENVIRONMENT 1
+
+/*
+ * Whether OpenCL is usable on the platform and we should compile in use of OpenCL.
+ */
+
+#define HAVE_FEATURE_OPENCL 1
+
+/*
+ * Whether the OS has Avahi support,
+ * This library is used for zeroconf service publication on the local network
+ * for the Impress remote control, so that the remote can automatically
+ * discover the running libO instance and its IP address.
+ *
+ * This library should be present on most modern linux distributions
+ * but not on "all" of them. For now, you should add --enable-avahi for
+ * this to be taken into account. Otherwise the test of its presence
+ * will not take place.
+ */
+
+#define HAVE_FEATURE_AVAHI 0
+
+/* MACOSX_SANDBOX - whether LibreOffice runs in an OS X sandbox
+ *
+ * When building LibreOffice for distribution through the Mac App Store,
+ * it must be sandboxed.
+ */
+
+#define HAVE_FEATURE_MACOSX_SANDBOX 0
+
+/* READONLY_INSTALLSET - whether to treat the installation as read-only
+ *
+ * Prevents attempts by LibreOffice to write into its installation. That means
+ * at least that no "system-wide" extensions can be added, if the location for
+ * them is the traditional one. Experimental work in progress, not actually implemented.
+ */
+
+#define HAVE_FEATURE_READONLY_INSTALLSET 0
+
+/*
+ * Whether FreeType has FT_Face_GetCharVariantIndex or not.
+ */
+#define HAVE_FT_FACE_GETCHARVARIANTINDEX 0
+
+/*
+ * Whether to use validation on files.
+ */
+#define HAVE_EXPORT_VALIDATION 0
+
+/*
+ * Whether to use export validation of binary formats (doc, xls, ppt)
+ *
+ * Requires installed Microsoft Office Binary File Format Validator
+ * https://www.microsoft.com/en-us/download/details.aspx?id=26794
+ */
+#define HAVE_BFFVALIDATOR 0
+
+/*
+ * Whether we support breakpad as crash reporting lib.
+ */
+#define HAVE_FEATURE_BREAKPAD 0
+
+/*
+ *  Whether OpenGL is enabled
+ */
+#define HAVE_FEATURE_OPENGL 1
+
+/*
+ * Whether User Interface is available
+ */
+#define HAVE_FEATURE_UI 1
+
+/*
+ * Whether PDF import is available
+ */
+#define HAVE_FEATURE_PDFIMPORT 0
+
+/*
+ * Whether NSS is available
+ */
+#define HAVE_FEATURE_NSS 1
+
+/*
+ * Whether pdfium is available
+ */
+#define HAVE_FEATURE_PDFIUM 1
+
+/*
+ * Whether extra fonts are available
+ */
+#define HAVE_MORE_FONTS 1
+
+/*
+ * Whether the automatic online updater is available
+ */
+#define HAVE_FEATURE_UPDATE_MAR 0
+
+#endif

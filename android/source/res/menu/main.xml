@@ -1,0 +1,61 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="org.libreoffice.MainActivity">
+
+    <group android:id="@+id/group_edit_actions"
+           tools:visible="true"
+           android:visible="false">
+
+        <item android:id="@+id/action_undo"
+              android:title="@string/action_undo"
+              android:icon="@drawable/ic_undo"
+              android:orderInCategory="100"
+              app:showAsAction="always"/>
+
+        <item android:id="@+id/action_redo"
+              android:title="@string/action_redo"
+              android:icon="@drawable/ic_redo"
+              android:orderInCategory="100"
+              app:showAsAction="always"/>
+
+        <item android:id="@+id/action_keyboard"
+              android:title="@string/action_keyboard"
+              android:icon="@drawable/ic_keyboard"
+              android:orderInCategory="100"
+              app:showAsAction="always"/>
+
+        <item android:id="@+id/action_format"
+            android:title="@string/action_fromat"
+            android:icon="@drawable/ic_text_format"
+            android:orderInCategory="100"
+            app:showAsAction="always"/>
+
+        <item android:id="@+id/action_search"
+              android:title="@string/action_search"
+              android:icon="@drawable/ic_search"
+              android:orderInCategory="100"
+              app:showAsAction="always"/>
+
+        <item android:id="@+id/action_save"
+            android:title="@string/action_save"
+            android:orderInCategory="100" />
+    </group>
+
+    <item android:id="@+id/action_presentation"
+        android:title="@string/action_presentation"
+        android:orderInCategory="100"
+        android:enabled="false" />
+
+    <item android:id="@+id/action_parts"
+          android:title="@string/action_parts"
+          android:orderInCategory="100" />
+
+    <item android:id="@+id/action_about"
+          android:title="@string/action_about"
+          android:orderInCategory="100" />
+
+    <item android:id="@+id/action_settings"
+          android:title="@string/action_settings"
+          android:orderInCategory="100" />
+</menu>

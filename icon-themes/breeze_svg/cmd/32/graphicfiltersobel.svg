@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs
+     id="defs5455">
+    <linearGradient
+       id="linearGradient4450">
+      <stop
+         id="stop4452"
+         offset="0"
+         style="stop-color:#4d4d4d;stop-opacity:1;" />
+      <stop
+         id="stop4454"
+         offset="1"
+         style="stop-color:#b3b3b3;stop-opacity:1;" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient4450"
+       id="linearGradient4519"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.70710678,-0.70710678,0.70710678,0.70710678,-675.53317,-55.84622)"
+       x1="438.18484"
+       y1="531.30548"
+       x2="437.47775"
+       y2="548.98315" />
+  </defs>
+    <path
+       style="fill:url(#linearGradient4519);fill-opacity:1;stroke:none"
+       d="M 24.40625 4 L 4 24.375 L 4 26 L 6 28 L 7.625 28 C 7.6871223 28.003187 28 7.59375 28 7.59375 L 28 6 L 26 4 L 24.40625 4 z " />
+</svg>

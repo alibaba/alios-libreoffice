@@ -1,0 +1,147 @@
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/*
+ * This file is part of the LibreOffice project.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * This file incorporates work covered by the following license notice:
+ *
+ *   Licensed to the Apache Software Foundation (ASF) under one or more
+ *   contributor license agreements. See the NOTICE file distributed
+ *   with this work for additional information regarding copyright
+ *   ownership. The ASF licenses this file to you under the Apache
+ *   License, Version 2.0 (the "License"); you may not use this file
+ *   except in compliance with the License. You may obtain a copy of
+ *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
+ */
+
+#ifndef INCLUDED_DTRANS_SOURCE_WIN32_DTOBJ_FETCLIST_HXX
+#define INCLUDED_DTRANS_SOURCE_WIN32_DTOBJ_FETCLIST_HXX
+
+#include <sal/types.h>
+#include <com/sun/star/datatransfer/XTransferable.hpp>
+#include <com/sun/star/uno/XComponentContext.hpp>
+#include "Fetc.hxx"
+
+#if defined _MSC_VER
+#pragma warning(push,1)
+#endif
+#if !defined WIN32_LEAN_AND_MEAN
+# define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#if defined _MSC_VER
+#pragma warning(pop)
+#endif
+#include <vector>
+
+/*****************************************************************
+    a simple container for FORMATECT structures
+    instances of this class are not thread-safe
+*****************************************************************/
+
+class CFormatEtcContainer
+{
+public:
+    CFormatEtcContainer( );
+
+    // duplicates not allowed
+    void SAL_CALL addFormatEtc( const CFormatEtc& fetc );
+
+    // removes the specified formatetc
+    void SAL_CALL removeFormatEtc( const CFormatEtc& fetc );
+
+    // removes the formatetc at pos
+    void SAL_CALL removeAllFormatEtc( );
+
+    bool SAL_CALL hasFormatEtc( const CFormatEtc& fetc ) const;
+
+    bool SAL_CALL hasElements( ) const;
+
+    // begin enumeration
+    void SAL_CALL beginEnumFormatEtc( );
+
+    // copies the specified number of formatetc structures starting
+    // at the current enum position
+    // the return value is the number of copied elements; if the
+    // current enum position is at the end the return value is 0
+    sal_uInt32 SAL_CALL nextFormatEtc( LPFORMATETC lpFetc, sal_uInt32 aNum = 1 );
+
+    // skips the specified number of elements in the container
+    bool SAL_CALL skipFormatEtc( sal_uInt32 aNum );
+
+protected:
+    typedef std::vector< CFormatEtc > FormatEtcMap_t;
+
+private:
+    FormatEtcMap_t           m_FormatMap;
+    FormatEtcMap_t::iterator m_EnumIterator;
+};
+
+/*****************************************************************
+    a helper class which converts data flavors to clipformats,
+    creates an appropriate formatetc structures and if possible
+    synthesizes clipboard formats if necessary, e.g. if text
+    is provided a locale will also be provided;
+    the class registers the formatetc within a CFormatEtcContainer
+
+    instances of this class are not thread-safe and multiple
+    instances of this class would use the same static variables
+    that's why this class should not be used by multiple threads,
+    only one thread of a process should use it
+*****************************************************************/
+
+// forward
+class CDataFormatTranslator;
+
+class CFormatRegistrar
+{
+public:
+    CFormatRegistrar( const css::uno::Reference< css::uno::XComponentContext >& rxContext,
+                      const CDataFormatTranslator& aDataFormatTranslator );
+
+    void SAL_CALL RegisterFormats( const css::uno::Reference< css::datatransfer::XTransferable >& aXTransferable,
+                                   CFormatEtcContainer& aFormatEtcContainer );
+
+    bool   SAL_CALL hasSynthesizedLocale( ) const;
+    static LCID SAL_CALL getSynthesizedLocale( );
+    static sal_uInt32 SAL_CALL getRegisteredTextCodePage( );
+    css::datatransfer::DataFlavor SAL_CALL getRegisteredTextFlavor( ) const;
+
+    static bool SAL_CALL isSynthesizeableFormat( const CFormatEtc& aFormatEtc );
+    static bool SAL_CALL needsToSynthesizeAccompanyFormats( const CFormatEtc& aFormatEtc );
+
+private:
+    OUString SAL_CALL getCharsetFromDataFlavor( const css::datatransfer::DataFlavor& aFlavor );
+
+    bool SAL_CALL hasUnicodeFlavor(
+        const css::uno::Reference< css::datatransfer::XTransferable >& aXTransferable ) const;
+
+    static bool SAL_CALL findLocaleForTextCodePage( );
+
+    static bool SAL_CALL isLocaleOemCodePage( LCID lcid, sal_uInt32 codepage );
+    static bool SAL_CALL isLocaleAnsiCodePage( LCID lcid, sal_uInt32 codepage );
+    static bool SAL_CALL isLocaleCodePage( LCID lcid, LCTYPE lctype, sal_uInt32 codepage );
+
+    static BOOL CALLBACK EnumLocalesProc( LPSTR lpLocaleStr );
+
+private:
+    const CDataFormatTranslator&             m_DataFormatTranslator;
+    bool                                     m_bHasSynthesizedLocale;
+    css::datatransfer::DataFlavor            m_RegisteredTextFlavor;
+
+    const css::uno::Reference< css::uno::XComponentContext >  m_xContext;
+
+    static LCID       m_TxtLocale;
+    static sal_uInt32 m_TxtCodePage;
+
+private:
+    CFormatRegistrar( const CFormatRegistrar& );
+    CFormatRegistrar& operator=( const CFormatRegistrar& );
+};
+
+#endif
+
+/* vim:set shiftwidth=4 softtabstop=4 expandtab: */

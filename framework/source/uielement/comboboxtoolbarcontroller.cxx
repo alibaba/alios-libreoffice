@@ -1,0 +1,377 @@
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/*
+ * This file is part of the LibreOffice project.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * This file incorporates work covered by the following license notice:
+ *
+ *   Licensed to the Apache Software Foundation (ASF) under one or more
+ *   contributor license agreements. See the NOTICE file distributed
+ *   with this work for additional information regarding copyright
+ *   ownership. The ASF licenses this file to you under the Apache
+ *   License, Version 2.0 (the "License"); you may not use this file
+ *   except in compliance with the License. You may obtain a copy of
+ *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
+ */
+
+#include <uielement/comboboxtoolbarcontroller.hxx>
+
+#include <com/sun/star/util/XURLTransformer.hpp>
+#include <com/sun/star/beans/PropertyValue.hpp>
+#include <com/sun/star/util/Color.hpp>
+
+#include <svtools/toolboxcontroller.hxx>
+#include <vcl/svapp.hxx>
+#include <vcl/mnemonic.hxx>
+#include <vcl/toolbox.hxx>
+#include <vcl/combobox.hxx>
+
+using namespace ::com::sun::star;
+using namespace css::uno;
+using namespace css::beans;
+using namespace css::lang;
+using namespace css::frame;
+using namespace css::util;
+
+namespace framework
+{
+
+// Wrapper class to notify controller about events from combobox.
+// Unfortunately the events are notified through virtual methods instead
+// of Listeners.
+
+class ComboBoxControl : public ComboBox
+{
+    public:
+        ComboBoxControl( vcl::Window* pParent, WinBits nStyle, ComboboxToolbarController* pComboboxToolbarController );
+        virtual ~ComboBoxControl() override;
+        virtual void dispose() override;
+
+        virtual void Select() override;
+        virtual void Modify() override;
+        virtual void GetFocus() override;
+        virtual void LoseFocus() override;
+        virtual bool PreNotify( NotifyEvent& rNEvt ) override;
+
+    private:
+        ComboboxToolbarController* m_pComboboxToolbarController;
+};
+
+ComboBoxControl::ComboBoxControl( vcl::Window* pParent, WinBits nStyle, ComboboxToolbarController* pComboboxToolbarController ) :
+    ComboBox( pParent, nStyle )
+    , m_pComboboxToolbarController( pComboboxToolbarController )
+{
+}
+
+ComboBoxControl::~ComboBoxControl()
+{
+    disposeOnce();
+}
+
+void ComboBoxControl::dispose()
+{
+    m_pComboboxToolbarController = nullptr;
+    ComboBox::dispose();
+}
+
+void ComboBoxControl::Select()
+{
+    ComboBox::Select();
+    if ( m_pComboboxToolbarController )
+        m_pComboboxToolbarController->Select();
+}
+
+void ComboBoxControl::Modify()
+{
+    ComboBox::Modify();
+    if ( m_pComboboxToolbarController )
+        m_pComboboxToolbarController->Modify();
+}
+
+void ComboBoxControl::GetFocus()
+{
+    ComboBox::GetFocus();
+    if ( m_pComboboxToolbarController )
+        m_pComboboxToolbarController->GetFocus();
+}
+
+void ComboBoxControl::LoseFocus()
+{
+    ComboBox::LoseFocus();
+    if ( m_pComboboxToolbarController )
+        m_pComboboxToolbarController->LoseFocus();
+}
+
+bool ComboBoxControl::PreNotify( NotifyEvent& rNEvt )
+{
+    bool bRet = false;
+    if ( m_pComboboxToolbarController )
+        bRet = m_pComboboxToolbarController->PreNotify( rNEvt );
+    if ( !bRet )
+        bRet = ComboBox::PreNotify( rNEvt );
+
+    return bRet;
+}
+
+ComboboxToolbarController::ComboboxToolbarController(
+    const Reference< XComponentContext >& rxContext,
+    const Reference< XFrame >&            rFrame,
+    ToolBox*                              pToolbar,
+    sal_uInt16                            nID,
+    sal_Int32                             nWidth,
+    const OUString&                       aCommand ) :
+    ComplexToolbarController( rxContext, rFrame, pToolbar, nID, aCommand )
+    ,   m_pComboBox( nullptr )
+{
+    m_pComboBox = VclPtr<ComboBoxControl>::Create( m_pToolbar, WB_DROPDOWN, this );
+    if ( nWidth == 0 )
+        nWidth = 100;
+
+    // default dropdown size
+    ::Size aLogicalSize( 8, 160 );
+    ::Size aPixelSize = m_pComboBox->LogicToPixel(aLogicalSize, MapMode(MapUnit::MapAppFont));
+
+    m_pComboBox->SetSizePixel( ::Size( nWidth, aPixelSize.Height() ));
+    m_pToolbar->SetItemWindow( m_nID, m_pComboBox );
+}
+
+ComboboxToolbarController::~ComboboxToolbarController()
+{
+}
+
+void SAL_CALL ComboboxToolbarController::dispose()
+{
+    SolarMutexGuard aSolarMutexGuard;
+
+    m_pToolbar->SetItemWindow( m_nID, nullptr );
+    m_pComboBox.disposeAndClear();
+
+    ComplexToolbarController::dispose();
+}
+
+Sequence<PropertyValue> ComboboxToolbarController::getExecuteArgs(sal_Int16 KeyModifier) const
+{
+    Sequence<PropertyValue> aArgs( 2 );
+    OUString aSelectedText = m_pComboBox->GetText();
+
+    // Add key modifier to argument list
+    aArgs[0].Name = "KeyModifier";
+    aArgs[0].Value <<= KeyModifier;
+    aArgs[1].Name = "Text";
+    aArgs[1].Value <<= aSelectedText;
+    return aArgs;
+}
+
+void ComboboxToolbarController::Select()
+{
+    if ( m_pComboBox->GetEntryCount() > 0 )
+    {
+        vcl::Window::PointerState aState = m_pComboBox->GetPointerState();
+
+        sal_uInt16 nKeyModifier = sal_uInt16( aState.mnState & KEY_MODIFIERS_MASK );
+        execute( nKeyModifier );
+    }
+}
+
+void ComboboxToolbarController::Modify()
+{
+    notifyTextChanged( m_pComboBox->GetText() );
+}
+
+void ComboboxToolbarController::GetFocus()
+{
+    notifyFocusGet();
+}
+
+void ComboboxToolbarController::LoseFocus()
+{
+    notifyFocusLost();
+}
+
+bool ComboboxToolbarController::PreNotify( NotifyEvent const & rNEvt )
+{
+    switch ( rNEvt.GetType() )
+    {
+        case MouseNotifyEvent::KEYINPUT :
+            {
+                const ::KeyEvent* pKeyEvent = rNEvt.GetKeyEvent();
+                const vcl::KeyCode& rKeyCode = pKeyEvent->GetKeyCode();
+                if(( rKeyCode.GetModifier() | rKeyCode.GetCode()) == KEY_RETURN )
+                {
+                    // Call execute only with non-empty text
+                    if ( !m_pComboBox->GetText().isEmpty() )
+                        execute( rKeyCode.GetModifier() );
+                    return true;
+                }
+            }
+            break;
+        case MouseNotifyEvent::GETFOCUS :
+            notifyFocusGet();
+            break;
+        case MouseNotifyEvent::LOSEFOCUS :
+            notifyFocusLost();
+            break;
+        default :
+            break;
+    }
+    return false;
+}
+
+void ComboboxToolbarController::executeControlCommand( const css::frame::ControlCommand& rControlCommand )
+{
+    if ( rControlCommand.Command == "SetText" )
+    {
+        for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
+        {
+            if ( rControlCommand.Arguments[i].Name == "Text" )
+            {
+                OUString aText;
+                rControlCommand.Arguments[i].Value >>= aText;
+                m_pComboBox->SetText( aText );
+
+                // send notification
+                notifyTextChanged( aText );
+                break;
+            }
+        }
+    }
+    else if ( rControlCommand.Command == "SetList" )
+    {
+        for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
+        {
+            if ( rControlCommand.Arguments[i].Name == "List" )
+            {
+                Sequence< OUString > aList;
+                m_pComboBox->Clear();
+
+                rControlCommand.Arguments[i].Value >>= aList;
+                for ( sal_Int32 j = 0; j < aList.getLength(); j++ )
+                    m_pComboBox->InsertEntry( aList[j] );
+
+                // send notification
+                uno::Sequence< beans::NamedValue > aInfo { { "List", css::uno::makeAny(aList) } };
+                addNotifyInfo( "ListChanged",
+                               getDispatchFromCommand( m_aCommandURL ),
+                               aInfo );
+
+                break;
+            }
+        }
+    }
+    else if ( rControlCommand.Command == "AddEntry" )
+    {
+        OUString   aText;
+        for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
+        {
+            if ( rControlCommand.Arguments[i].Name == "Text" )
+            {
+                if ( rControlCommand.Arguments[i].Value >>= aText )
+                    m_pComboBox->InsertEntry( aText, COMBOBOX_APPEND );
+                break;
+            }
+        }
+    }
+    else if ( rControlCommand.Command == "InsertEntry" )
+    {
+        sal_Int32      nPos( COMBOBOX_APPEND );
+        OUString   aText;
+        for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
+        {
+            if ( rControlCommand.Arguments[i].Name == "Pos" )
+            {
+                sal_Int32 nTmpPos = 0;
+                if ( rControlCommand.Arguments[i].Value >>= nTmpPos )
+                {
+                    if (( nTmpPos >= 0 ) &&
+                        ( nTmpPos < m_pComboBox->GetEntryCount() ))
+                        nPos = nTmpPos;
+                }
+            }
+            else if ( rControlCommand.Arguments[i].Name == "Text" )
+                rControlCommand.Arguments[i].Value >>= aText;
+        }
+
+        m_pComboBox->InsertEntry( aText, nPos );
+    }
+    else if ( rControlCommand.Command == "RemoveEntryPos" )
+    {
+        for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
+        {
+            if ( rControlCommand.Arguments[i].Name == "Pos" )
+            {
+                sal_Int32 nPos( -1 );
+                if ( rControlCommand.Arguments[i].Value >>= nPos )
+                {
+                    if ( 0 <= nPos && nPos <  m_pComboBox->GetEntryCount() )
+                        m_pComboBox->RemoveEntryAt(nPos);
+                }
+                break;
+            }
+        }
+    }
+    else if ( rControlCommand.Command == "RemoveEntryText" )
+    {
+        for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
+        {
+            if ( rControlCommand.Arguments[i].Name == "Text")
+            {
+                OUString aText;
+                if ( rControlCommand.Arguments[i].Value >>= aText )
+                    m_pComboBox->RemoveEntry( aText );
+                break;
+            }
+        }
+    }
+    else if ( rControlCommand.Command == "SetDropDownLines" )
+    {
+        for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
+        {
+            if ( rControlCommand.Arguments[i].Name == "Lines" )
+            {
+                sal_Int32 nValue( 5 );
+                rControlCommand.Arguments[i].Value >>= nValue;
+                m_pComboBox->SetDropDownLineCount( sal_uInt16( nValue ));
+                break;
+            }
+        }
+    }
+    else if ( rControlCommand.Command == "SetBackgroundColor" )
+    {
+        for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
+        {
+            if ( rControlCommand.Arguments[i].Name == "Color" )
+            {
+                css::util::Color aColor(0);
+                if ( rControlCommand.Arguments[i].Value >>= aColor )
+                {
+                    ::Color aBackColor( static_cast< sal_uInt32 >( aColor ));
+                    m_pComboBox->SetControlBackground( aBackColor );
+                }
+                break;
+            }
+        }
+    }
+    else if ( rControlCommand.Command == "SetTextColor" )
+    {
+        for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
+        {
+            if ( rControlCommand.Arguments[i].Name == "Color" )
+            {
+                css::util::Color aColor(0);
+                if ( rControlCommand.Arguments[i].Value >>= aColor )
+                {
+                    ::Color aForeColor( static_cast< sal_uInt32 >( aColor ));
+                    m_pComboBox->SetControlForeground( aForeColor );
+                }
+                break;
+            }
+        }
+    }
+}
+
+} // namespace
+
+/* vim:set shiftwidth=4 softtabstop=4 expandtab: */

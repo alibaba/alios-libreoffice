@@ -1,0 +1,79 @@
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/*
+ * This file is part of the LibreOffice project.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * This file incorporates work covered by the following license notice:
+ *
+ *   Licensed to the Apache Software Foundation (ASF) under one or more
+ *   contributor license agreements. See the NOTICE file distributed
+ *   with this work for additional information regarding copyright
+ *   ownership. The ASF licenses this file to you under the Apache
+ *   License, Version 2.0 (the "License"); you may not use this file
+ *   except in compliance with the License. You may obtain a copy of
+ *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
+ */
+
+#include <svl/itemset.hxx>
+#include <vcl/layout.hxx>
+
+#include <strings.hrc>
+#include <sdattr.hxx>
+#include <sdresid.hxx>
+#include <layeroptionsdlg.hxx>
+
+SdInsertLayerDlg::SdInsertLayerDlg( vcl::Window* pWindow, const SfxItemSet& rInAttrs,
+    bool bDeletable, const OUString& rStr )
+    : ModalDialog(pWindow, "InsertLayerDialog", "modules/sdraw/ui/insertlayer.ui")
+    , mrOutAttrs(rInAttrs)
+{
+    SetText(rStr);
+
+    get(m_pEdtName, "name");
+    get(m_pEdtTitle, "title");
+    get(m_pEdtDesc, "textview");
+    get(m_pCbxVisible, "visible");
+    get(m_pCbxPrintable, "printable");
+    get(m_pCbxLocked, "locked");
+
+    m_pEdtName->SetText( static_cast<const SfxStringItem&>( mrOutAttrs.Get( ATTR_LAYER_NAME ) ).GetValue() );
+    m_pEdtTitle->SetText( static_cast<const SfxStringItem&>( mrOutAttrs.Get( ATTR_LAYER_TITLE ) ).GetValue() );
+    m_pEdtDesc->SetText( static_cast<const SfxStringItem&>( mrOutAttrs.Get( ATTR_LAYER_DESC ) ).GetValue() );
+    m_pEdtDesc->set_height_request(4 * m_pEdtDesc->GetTextHeight());
+    m_pCbxVisible->Check( static_cast<const SfxBoolItem&>( mrOutAttrs.Get( ATTR_LAYER_VISIBLE ) ).GetValue() );
+    m_pCbxPrintable->Check( static_cast<const SfxBoolItem&>( mrOutAttrs.Get( ATTR_LAYER_PRINTABLE ) ).GetValue() );
+    m_pCbxLocked->Check( static_cast<const SfxBoolItem&>( mrOutAttrs.Get( ATTR_LAYER_LOCKED ) ).GetValue() );
+
+    get<VclContainer>("nameframe")->Enable(bDeletable);
+}
+
+SdInsertLayerDlg::~SdInsertLayerDlg()
+{
+    disposeOnce();
+}
+
+void SdInsertLayerDlg::dispose()
+{
+    m_pEdtName.clear();
+    m_pEdtTitle.clear();
+    m_pEdtDesc.clear();
+    m_pCbxVisible.clear();
+    m_pCbxPrintable.clear();
+    m_pCbxLocked.clear();
+    ModalDialog::dispose();
+}
+
+void SdInsertLayerDlg::GetAttr( SfxItemSet& rAttrs )
+{
+    rAttrs.Put( makeSdAttrLayerName( m_pEdtName->GetText() ) );
+    rAttrs.Put( makeSdAttrLayerTitle( m_pEdtTitle->GetText() ) );
+    rAttrs.Put( makeSdAttrLayerDesc( m_pEdtDesc->GetText() ) );
+    rAttrs.Put( makeSdAttrLayerVisible( m_pCbxVisible->IsChecked() ) );
+    rAttrs.Put( makeSdAttrLayerPrintable( m_pCbxPrintable->IsChecked() ) );
+    rAttrs.Put( makeSdAttrLayerLocked( m_pCbxLocked->IsChecked() ) );
+}
+
+/* vim:set shiftwidth=4 softtabstop=4 expandtab: */

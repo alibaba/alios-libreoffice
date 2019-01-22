@@ -1,0 +1,103 @@
+--- boost/date_time/filetime_functions.hpp
++++ boost/date_time/filetime_functions.hpp
+@@ -27,6 +27,16 @@
+ #include <boost/date_time/time.hpp>
+ #include <boost/date_time/date_defs.hpp>
+ 
++#if !defined(BOOST_USE_WINDOWS_H)
++extern "C" {
++    struct _FILETIME; // Windows Kits/8.1/Include/shared/minwindef.h
++    struct _SYSTEMTIME; // Windows Kits/8.1/Include/um/minwinbase.h
++    __declspec(dllimport) void __stdcall GetSystemTimeAsFileTime(_FILETIME* lpFileTime);
++    __declspec(dllimport) int __stdcall FileTimeToLocalFileTime(const _FILETIME* lpFileTime, _FILETIME* lpLocalFileTime);
++    __declspec(dllimport) void __stdcall GetSystemTime(_SYSTEMTIME* lpSystemTime);
++    __declspec(dllimport) int __stdcall SystemTimeToFileTime(const _SYSTEMTIME* lpSystemTime, _FILETIME* lpFileTime);
++}
++#endif
+ namespace boost {
+ 
+ namespace date_time {
+@@ -54,10 +64,6 @@
+             boost::uint16_t wMilliseconds;
+         };
+ 
+-        __declspec(dllimport) void __stdcall GetSystemTimeAsFileTime(FILETIME* lpFileTime);
+-        __declspec(dllimport) int __stdcall FileTimeToLocalFileTime(const FILETIME* lpFileTime, FILETIME* lpLocalFileTime);
+-        __declspec(dllimport) void __stdcall GetSystemTime(SYSTEMTIME* lpSystemTime);
+-        __declspec(dllimport) int __stdcall SystemTimeToFileTime(const SYSTEMTIME* lpSystemTime, FILETIME* lpFileTime);
+ 
+     } // extern "C"
+ 
+@@ -74,7 +80,7 @@
+         GetSystemTimeAsFileTime(&ft_utc);
+         FileTimeToLocalFileTime(&ft_utc, &ft);
+ #elif defined(BOOST_HAS_GETSYSTEMTIMEASFILETIME)
+-        GetSystemTimeAsFileTime(&ft);
++        GetSystemTimeAsFileTime(reinterpret_cast<::_FILETIME *>(&ft));
+ #else
+         system_time st;
+         GetSystemTime(&st);
+--- boost/multi_array/base.hpp
++++ boost/multi_array/base.hpp
+@@ -222,7 +222,7 @@
+ // MSVC 2010 is broken in debug mode: it requires
+ // that an Output Iterator have output_iterator_tag in its iterator_category if 
+ // that iterator is not bidirectional_iterator or random_access_iterator.
+-#if BOOST_WORKAROUND(BOOST_MSVC, >= 1600)
++#if BOOST_WORKAROUND(BOOST_MSVC, >= 1600) || (defined __clang__ && BOOST_WORKAROUND(_MSC_VER, >= 1600))
+ struct mutable_iterator_tag
+  : boost::random_access_traversal_tag, std::input_iterator_tag
+ {
+@@ -274,7 +274,7 @@
+   //
+   // iterator support
+   //
+-#if BOOST_WORKAROUND(BOOST_MSVC, >= 1600)
++#if BOOST_WORKAROUND(BOOST_MSVC, >= 1600) || (defined __clang__ && BOOST_WORKAROUND(_MSC_VER, >= 1600))
+   // Deal with VC 2010 output_iterator_tag requirement
+   typedef array_iterator<T,T*,mpl::size_t<NumDims>,reference,
+                          mutable_iterator_tag> iterator;
+--- boost/multi_array/iterator.hpp
++++ boost/multi_array/iterator.hpp
+@@ -60,7 +60,7 @@
+     , private
+           value_accessor_generator<T,NumDims>::type
+ {
+-  friend class iterator_core_access;
++  friend class boost::iterators::iterator_core_access;
+   typedef detail::multi_array::associated_types<T,NumDims> access_t;
+ 
+   typedef iterator_facade<
+
+# workdir/UnpackedTarball/boost\boost/smart_ptr/detail/yield_k.hpp(63,29) :  error: 'Sleep' redeclared without 'dllimport' attribute: previous 'dll# import' ignored [-Werror,-Winconsistent-dllimport]
+#   extern "C" void __stdcall Sleep( unsigned long ms );
+#                             ^
+# C:/PROGRA~2/WI3CF2~1/8.1/include/um\synchapi.h(908,1) :  note: previous declaration is here
+# Sleep(
+# ^
+--- boost/smart_ptr/detail/yield_k.hpp
++++ boost/smart_ptr/detail/yield_k.hpp
+@@ -61,7 +61,7 @@
+ 
+ #if !defined( BOOST_USE_WINDOWS_H ) && !BOOST_PLAT_WINDOWS_RUNTIME
+ #if !BOOST_COMP_CLANG || !defined __MINGW32__
+-  extern "C" void __stdcall Sleep( unsigned long ms );
++  extern "C" __declspec(dllimport) void __stdcall Sleep( unsigned long ms );
+ #else
+ #include <_mingw.h>
+ #if !defined __MINGW64_VERSION_MAJOR
+
+# workdir/UnpackedTarball/boost/libs/thread/src/win32/thread.cpp(1006,36) :  error: dllimport cannot be applied to non-inline function definition
+#     BOOST_THREAD_DECL void __cdecl on_process_enter()
+#                                    ^
+--- boost/thread/detail/config.hpp
++++ boost/thread/detail/config.hpp
+@@ -396,7 +396,7 @@
+ #else //Use default
+ #   if defined(BOOST_THREAD_PLATFORM_WIN32)
+ #       if defined(BOOST_MSVC) || defined(BOOST_INTEL_WIN) \
+-      || defined(__MINGW32__) || defined(MINGW32) || defined(BOOST_MINGW32)
++      || defined(__MINGW32__) || defined(MINGW32) || defined(BOOST_MINGW32) || defined __clang__
+       //For compilers supporting auto-tss cleanup
+             //with Boost.Threads lib, use Boost.Threads lib
+ #           define BOOST_THREAD_USE_LIB

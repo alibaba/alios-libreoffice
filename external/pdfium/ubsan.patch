@@ -1,0 +1,54 @@
+--- core/fxcodec/lbmp/fx_bmp.h
++++ core/fxcodec/lbmp/fx_bmp.h
+@@ -126,7 +126,7 @@ class BMPDecompressor {
+ class CBmpContext : public CCodec_BmpModule::Context {
+  public:
+   CBmpContext(CCodec_BmpModule* pModule, CCodec_BmpModule::Delegate* pDelegate);
+-  ~CBmpContext() override;
++  ~CBmpContext() override {}
+ 
+   BMPDecompressor m_Bmp;
+   UnownedPtr<CCodec_BmpModule> const m_pModule;
+--- core/fxcrt/string_data_template.h
++++ core/fxcrt/string_data_template.h
+@@ -78,7 +78,8 @@
+ 
+   void CopyContentsAt(size_t offset, const CharType* pStr, size_t nLen) {
+     ASSERT(offset >= 0 && nLen >= 0 && offset + nLen <= m_nAllocLength);
+-    memcpy(m_String + offset, pStr, nLen * sizeof(CharType));
++    if (nLen != 0)
++      memcpy(m_String + offset, pStr, nLen * sizeof(CharType));
+     m_String[offset + nLen] = 0;
+   }
+ 
+--- core/fxge/cfx_facecache.cpp
++++ core/fxge/cfx_facecache.cpp
+@@ -223,7 +223,8 @@ std::unique_ptr<CFX_GlyphBitmap> CFX_FaceCache::RenderGlyph(
+       }
+     }
+   } else {
+-    memset(pDestBuf, 0, dest_pitch * bmheight);
++    if (dest_pitch != 0 && bmheight != 0)
++      memset(pDestBuf, 0, dest_pitch * bmheight);
+     if (anti_alias == FXFT_RENDER_MODE_MONO &&
+         FXFT_Get_Bitmap_PixelMode(FXFT_Get_Glyph_Bitmap(m_Face)) ==
+             FXFT_PIXEL_MODE_MONO) {
+--- third_party/agg23/agg_rasterizer_scanline_aa.h
++++ third_party/agg23/agg_rasterizer_scanline_aa.h
+@@ -349,14 +349,14 @@ public:
+                     cover += cur_cell->cover;
+                 }
+                 if(area) {
+-                    alpha = calculate_alpha((cover << (poly_base_shift + 1)) - area, no_smooth);
++                    alpha = calculate_alpha(int(unsigned(cover) << (poly_base_shift + 1)) - area, no_smooth);
+                     if(alpha) {
+                         sl.add_cell(x, alpha);
+                     }
+                     x++;
+                 }
+                 if(num_cells && cur_cell->x > x) {
+-                    alpha = calculate_alpha(cover << (poly_base_shift + 1), no_smooth);
++                    alpha = calculate_alpha(unsigned(cover) << (poly_base_shift + 1), no_smooth);
+                     if(alpha) {
+                         sl.add_span(x, cur_cell->x - x, alpha);
+                     }
